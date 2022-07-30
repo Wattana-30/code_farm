@@ -36,7 +36,7 @@ def startEvent():
     '''
     img = capture_img()
 
-    if img:
+    if type(img) is not bool:
         base64_Str = imgToBase64(img)
         ValueofArea = find_leafAreaIndex(img)
         return base64_Str

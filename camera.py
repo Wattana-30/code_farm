@@ -34,7 +34,7 @@ def getImg():
     video_capture = cv2.VideoCapture(
         gstreamer_pipelineRGB(), cv2.CAP_GSTREAMER)
 
-    if video_capture.isOpened():
+    if not video_capture.isOpened():
         return False
 
     while True:
@@ -48,3 +48,4 @@ def getImg():
     cv2.destroyAllWindows()
 
     return frame
+getImg()

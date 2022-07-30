@@ -4,7 +4,7 @@ from paho.mqtt import client as mqtt_client
 import segmentation as smt
 
 
-broker = '192.168.1.101'
+broker = '192.168.1.104'
 port = 1883
 sub_topic = ["plant/plc-to-jetson"]
 # generate client ID with pub prefix randomly
@@ -35,7 +35,7 @@ def subscribe(client: mqtt_client):
             payloadList = payload.split(" ")
             if payloadList[2] == "ready":
                 data_str = smt.startEvent(payloadList[0], payloadList[1])
-                client.publish("plant/jetson-to-server", data_str)
+                client.publish("plant/jetson-to-server",data_str)
                 client.publish("plant/jetson-to-plc", "ready")
 
     for topic in sub_topic:

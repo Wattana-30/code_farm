@@ -1,7 +1,7 @@
 import cv2
 import base64
 import numpy as np
-from camera import getImg
+import camera as cm
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -10,7 +10,7 @@ import json
 
 
 def capture_img():
-    return getImg()
+    return cm.getImg()
 
 
 def find_leafAreaIndex(img):
@@ -30,8 +30,6 @@ def ndvi(img):
     _, R, NearIR = cv2.split(im)
     # Compute NDVI values for each pixel
     NDVI = (NearIR - R) / (NearIR + R + 0.001)
-    plt.imshow(NDVI)
-    plt.show()
     plt.imsave("Image/NDVI.jpg",NDVI)
     return NDVI
 
@@ -42,15 +40,16 @@ def imgToBase64(img):
     return jpg_as_text
 
 
-def startEvent(farm_id,position):    
+def startEvent(farm_id, position):    
     #start
     img = capture_img()
     base64_str = imgToBase64(img)
     data = {
         "farm_id": farm_id,
         "position": position,
-        "image": base64_str 
+        "image": base64_str.decode() 
     }
+
     data_str = json.dumps(data)
     return data_str
     ''' 

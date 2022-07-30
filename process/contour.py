@@ -32,7 +32,7 @@ def contouring():
     x,y,w,h = cv2.boundingRect(blank_mask)
     ROI = result[y:y+h, x:x+w]
     cv2.bitwise_not(blank_mask)
-    # image in this case is your image you want to eliminate black
+    #image in this case is your image you want to eliminate black
     result[np.where((result==[0,0,0]).all(axis=2))] = [255,255,255]
     
     cv2.imshow("result",result)
@@ -42,4 +42,4 @@ def contouring():
     
     
     return result
-contouring()
+
