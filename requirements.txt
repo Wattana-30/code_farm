@@ -1,0 +1,8 @@
+# Python 3.9.4
+peewee
+pymysql
+pydantic
+fastapi
+uvicorn
+fastapi-mqtt
+matplotlib
