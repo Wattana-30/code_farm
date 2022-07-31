@@ -1,12 +1,10 @@
-# python3.6
-
 import random
 import time
 from paho.mqtt import client as mqtt_client
 import segmentation as smt
 
 
-broker = '192.168.1.101'
+broker = '192.168.1.106'
 port = 1883
 sub_topic = ["plant/plc-to-jetson"]
 # generate client ID with pub prefix randomly
@@ -33,9 +31,12 @@ def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
         if msg.topic == "plant/plc-to-jetson":
-            if msg.payload.decode() == "ready":
-                smt.startEvent()
-                result = client.publish("plant/jetson-to-plc", "ready")
+            payload = msg.payload.decode()
+            payloadList = payload.split(" ")
+            if payloadList[2] == "ready":
+                data_str = smt.startEvent(payloadList[0], payloadList[1])
+                client.publish("plant/jetson-to-server",data_str)
+                client.publish("plant/jetson-to-plc", "ready")
 
     for topic in sub_topic:
         client.subscribe(topic)
@@ -45,7 +46,7 @@ def subscribe(client: mqtt_client):
 def run():
     client = connect_mqtt()
     subscribe(client)
-    client.loop_forever()
+    client.loop_forever()    # Read image, create blank masks, color threshold
 
 
 if __name__ == '__main__':

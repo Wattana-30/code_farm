@@ -4,7 +4,7 @@ from paho.mqtt import client as mqtt_client
 import segmentation as smt
 
 
-broker = '192.168.1.104'
+broker = '192.168.1.106'
 port = 1883
 sub_topic = ["plant/plc-to-jetson"]
 # generate client ID with pub prefix randomly
