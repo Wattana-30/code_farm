@@ -1,10 +1,9 @@
 import random
-import time
 from paho.mqtt import client as mqtt_client
 import segmentation as smt
 
 
-broker = '192.168.1.106'
+broker = 'broker.emqx.io'
 port = 1883
 sub_topic = ["plant/plc-to-jetson"]
 # generate client ID with pub prefix randomly
