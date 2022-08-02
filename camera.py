@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 def gstreamer_pipeline(
     capture_width=3280,
     capture_height=2464,
@@ -29,23 +30,20 @@ def gstreamer_pipeline(
     )
 
 
-
 def getImg():
     video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
     if not video_capture.isOpened():
         return False
-    count =0
+    count = 0
     while True:
-        count+=1
+        count += 1
         _, frame = video_capture.read()
-        img=frame
+        img = frame
         if count > 10:
             break
-    
-    cv2.imshow("result",img)
+
+    cv2.imshow("result", img)
     cv2.waitKey(10)
     cv2.destroyAllWindows()
-    video_capture.release()    
+    video_capture.release()
     return img
-    
-
