@@ -30,3 +30,22 @@ def update_plant_qrcode(plant_qrcode_id: int, item: schemas.PlantQrcodeBase):
 def delete_plant_qrcode(id: int):
     models.PlantQrcode.delete().where(models.PlantQrcode.id == id).execute()
     return {'message': f'delete id is {id} successful.'}
+
+
+def pack_and_insert_features(msg: str):
+    msgList = msg.split(" ")
+
+    farm_id = msgList[0]
+    tree_index = msgList[1]
+    qr_code = msgList[2]
+    
+
+    item = schemas.PlantQrcodeCreate(
+        farm_id=farm_id,
+        tree_index=tree_index,
+        qr_code=qr_code,
+        
+
+    )
+
+    create_plant_qrcode(farm_id, item)
