@@ -7,14 +7,16 @@ from databases import models
 from schemas import plant_features_schemas as schemas
 
 
-def create_plant_features(qrcode_id: int, item: schemas. PlantFeaturesBase):
+def create_plant_features(farm_id: int, item: schemas. PlantFeaturesBase):
     db_plant_features = models. PlantFeatures(
-        **item.dict(), qrcode_id=qrcode_id)
-    try:
-        db_plant_features.save()
-    except:
-        raise HTTPException(
-            status_code=400, detail=f"ไม่มี qrcode_id: {qrcode_id} or มีข้อมูล rgb_path, noir_path แล้ว")
+        **item.dict(), farm_id=farm_id)
+    db_plant_features.save()
+    
+    # try:
+    #     db_plant_features.save()
+    # except:
+    #     raise HTTPException(
+    #         status_code=400, detail=f"ไม่มี farm_id: {farm_id} or มีข้อมูล rgb_path, noir_path แล้ว")
     return db_plant_features
 
 

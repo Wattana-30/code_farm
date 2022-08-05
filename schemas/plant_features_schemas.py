@@ -6,11 +6,11 @@ from schemas.schemas import PeeweeGetterDict
 
 
 class PlantFeaturesBase(BaseModel):
-    plant_loc: int
+    plant_loc: str
     rgb_path: str
     noir_path: str
+    ndvi_path: str
     leaf_area_index: float
-    ndvi: str
 
 
 class PlantFeaturesCreate(PlantFeaturesBase):
@@ -19,7 +19,7 @@ class PlantFeaturesCreate(PlantFeaturesBase):
 
 class PlantFeatures(PlantFeaturesBase):
     id: int
-    qrcode_id: int
+    # qrcode_id: int
     created_at: datetime
 
     class Config:

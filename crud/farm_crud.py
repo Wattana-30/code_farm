@@ -7,13 +7,14 @@ from databases import models
 from schemas import farm_schemas
 
 
-def create_farm(item: farm_schemas.Farm):
+def create_farm(item: farm_schemas.FarmBase):
     db_farm = models.Farm(**item.dict())
-    try:
-        db_farm.save()
-    except:
-        raise HTTPException(
-            status_code=400, detail=f"{item.farm_name} มีชื่อนี้แล้ว")
+    db_farm.save()
+    # try:
+    #     db_farm.save()
+    # except:
+    #     raise HTTPException(
+    #         status_code=400, detail=f"{item.farm_name} มีชื่อนี้แล้ว")
     return db_farm
 
 

@@ -11,10 +11,6 @@ from databases.database import db
 
 # crud
 from crud import greenhouse_crud as greenEnv
-from crud import farm_crud as farm
-from crud import plant_features_crud as features
-from crud import plant_qrcode_crud as qrcode
-from crud import constant_crud as constant
 
 # utils
 from utils import utils
@@ -40,7 +36,7 @@ app.include_router(constant.router_constant)
 
 mqtt_config = MQTTConfig(
     # host = "broker.emqx.io",
-    host = "192.168.1.105",
+    host = "localhost",
     port= 1883,
     keepalive = 60,
     username="",

@@ -7,6 +7,15 @@ import os
 from PIL import Image
 import io
 import json
+from uuid import uuid4
+
+# crud
+from crud import plant_features_crud
+from crud import farm_crud
+
+# schemas
+from schemas import plant_features_schemas
+from schemas import farm_schemas
 
 
 def create_path(image_name: str, folder: str):
@@ -131,3 +140,30 @@ def pack_save_insert_toweb(mqtt, payload):
 
     # pack and publish to web
     publish_to_web(mqtt, data['image'], imgToBase64(NDVI).decode(), data['position'])
+
+
+    '''
+        farm_id
+        rgb_path
+        ndvi_path
+        leaf_area_index
+        plan_loc
+    '''
+
+    farm_id = data['farm_id']
+    leaf_area_index = find_leafAreaIndex(img)
+    plan_loc = data['position']
+
+    item = plant_features_schemas.PlantFeaturesBase(
+        plant_loc=plan_loc,
+        rgb_path=rgb_path,
+        noir_path=str(uuid4()),
+        ndvi_path=ndvi_path,
+        leaf_area_index=leaf_area_index
+    )
+
+    plant_features_crud.create_plant_features(farm_id, item)
+
+
+    # item = farm_schemas.FarmBase(farm_name='นันธิดา บ้านสวน')
+    # farm_crud.create_farm(item)

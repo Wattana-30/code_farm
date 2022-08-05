@@ -67,12 +67,13 @@ class Constant(peewee.Model):
 
 
 class PlantFeatures(peewee.Model):
-    qrcode = peewee.ForeignKeyField(PlantQrcode)
-    plant_loc = peewee.IntegerField()
+    # qrcode = peewee.ForeignKeyField(PlantQrcode)
+    farm = peewee.ForeignKeyField(Farm)
+    plant_loc = peewee.CharField(max_length=255)
     rgb_path = peewee.CharField(max_length=255, unique=True)
     noir_path = peewee.CharField(max_length=255, unique=True)
+    ndvi_path = peewee.CharField(max_length=255, unique=True)
     leaf_area_index = peewee.DoubleField()
-    ndvi = peewee.CharField(max_length=255)
     created_at = peewee.DateTimeField(default=datetime.now())
 
     class Meta:

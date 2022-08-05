@@ -2,7 +2,7 @@ from contextvars import ContextVar
 import peewee
 
 USERNAME = "root"
-PASSWORD = "232544da"
+PASSWORD = ""
 DATABASE_NAME = "plant_monitoring_robot"
 HOST = "localhost"
 PORT = 3306
