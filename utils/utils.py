@@ -65,8 +65,8 @@ def contouring(rgb_path):
     blank_mask = np.zeros(image.shape, dtype=np.uint8)
     original = image.copy()
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    lower = np.array([30, 50, 0])
-    upper = np.array([88, 255, 139])
+    lower = np.array([93, 132, 147])
+    upper = np.array([62, 86, 98])
     mask = cv2.inRange(hsv, lower, upper)
     
     # Perform morphological operations
@@ -94,8 +94,25 @@ def contouring(rgb_path):
     return result
 
 
+def capture_img():
+    video_capture = cv2.VideoCapture('http://192.168.1.105:1234/video')
+    if not video_capture.isOpened():
+        return False
+    count = 0
+    while True:
+        count += 1
+        _, frame = video_capture.read()
+        if count > 10:
+            break
+
+    cv2.waitKey(10)
+    cv2.destroyAllWindows()
+    video_capture.release()
+    return frame
+
+
 def publish_to_web(mqtt, img, NDVI, position):
-    status = "next" if position == "Point_1" else "end"
+    status = "end" if position == "Point_6" else "next"
 
     data = {
         "originalImage": img,
@@ -109,38 +126,39 @@ def publish_to_web(mqtt, img, NDVI, position):
     print('Successful')
 
 
-def pack_save_insert_toweb(mqtt, payload):
-    data = json.loads(payload)
+
+def startEvent(mqtt, farm_id, position):    
+    #start
+    img = capture_img()
 
     # get path image
     dt = datetime.now()
-    rgb_path = f"Point_1_{dt}_rgb".replace(":", "").replace(".", "")
-    ndvi_path = f"Point_1_{dt}_ndvi".replace(":", "").replace(".", "")
+    rgb_path = f"{position}_{dt}_rgb".replace(":", "").replace(".", "")
+    ndvi_path = f"{position}_{dt}_ndvi".replace(":", "").replace(".", "")
 
     # get full path
     rgb_path = create_path(rgb_path, 'RGB')
     ndvi_path = create_path(ndvi_path, 'NDVI')
 
-    # base64 to image
-    img = stringToImage(data['image'])
-
     # save original image
-    # save_image(rgb_path, data['image'])
     cv2.imwrite(rgb_path, img)
 
     # find ndvi
-    imgToFindValue = contouring(rgb_path)
-    NDVI = ndvi(imgToFindValue)
+    try:
+        imgToFindValue = contouring(rgb_path)
+        NDVI = ndvi(imgToFindValue)
 
-    # save ndvi image
-    # plt.imshow(NDVI)
-    # plt.show()
-    plt.imsave(ndvi_path, NDVI)
-    NDVI = cv2.imread(ndvi_path)
+        # save ndvi image
+        # plt.imshow(NDVI)
+        # plt.show()
+        plt.imsave(ndvi_path, NDVI)
+        NDVI = cv2.imread(ndvi_path)
+    except:
+        NDVI = img
 
     # pack and publish to web
-    publish_to_web(mqtt, data['image'], imgToBase64(NDVI).decode(), data['position'])
-
+    publish_to_web(mqtt, imgToBase64(img).decode(), imgToBase64(NDVI).decode(), position)
+    #publish_to_web(mqtt, data['image'], data['image'], data['position'])
 
     '''
         farm_id
@@ -150,12 +168,10 @@ def pack_save_insert_toweb(mqtt, payload):
         plan_loc
     '''
 
-    farm_id = data['farm_id']
     leaf_area_index = find_leafAreaIndex(img)
-    plan_loc = data['position']
 
     item = plant_features_schemas.PlantFeaturesBase(
-        plant_loc=plan_loc,
+        plant_loc=position,
         rgb_path=rgb_path,
         noir_path=str(uuid4()),
         ndvi_path=ndvi_path,

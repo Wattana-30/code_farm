@@ -36,14 +36,3 @@ def delete_farm(id: int):
     models.Farm.delete().where(models.Farm.id == id).execute()
     return {'message': f'delete farm_id is {id} successful.'}
 
-
-def pack_and_insert_Farm(msg: str):
-    msgList = msg.split(" ")
-
-    farm_name = msgList[0]
-
-    item = farm_schemas.FarmCreate(
-        farm_name=farm_name,
-    )
-
-    create_farm(farm_name, item)

@@ -1,6 +1,7 @@
 from fastapi_mqtt import FastMQTT, MQTTConfig
 from fastapi import FastAPI
 import uvicorn
+import time
 
 # routers
 from routers import users, items, plant_features, plant_qrcode, farm, greenhouse, constant
@@ -19,7 +20,6 @@ db.connect()
 db.create_tables([
     models.Farm, 
     models.GreenhouseEnv, 
-    models.PlantQrcode, 
     models.PlantFeatures, 
     models.Constant
 ])
@@ -30,7 +30,7 @@ app = FastAPI(title='Python x MySQL', description='APIs for MySQL Apis', version
 # app.include_router(users.router_users)
 app.include_router(farm.router_farms)
 app.include_router(greenhouse.router_greenhouses)
-app.include_router(plant_qrcode.router_plant_qrcode)
+#app.include_router(plant_qrcode.router_plant_qrcode)
 app.include_router(plant_features.router_plant_features)
 app.include_router(constant.router_constant)
 
@@ -56,6 +56,7 @@ def connect(client, flags, rc, properties):
     print("Connected: ", client, flags, rc, properties)
     mqtt.client.subscribe("plant/farm")
     mqtt.client.subscribe("plant/jetson-to-server")
+    mqtt.client.subscribe("plant/plc-to-jetson")
 
 
 @mqtt.on_message()
@@ -66,11 +67,18 @@ async def message(client, topic, payload, qos, properties):
 
     if topic == 'plant/farm':
         greenEnv.pack_and_insert_greenhouse(payload.decode())
-    elif topic == 'plant/jetson-to-server':
-        utils.pack_save_insert_toweb(mqtt, payload.decode())
-    
-    # mqtt.publish("/mqttx", payload)
+    elif topic == 'plant/plc-to-jetson':
+        payload = payload.decode()
+        payloadList = payload.split(" ")
 
+        if payloadList[1] == "false": return
+
+        if payloadList[2] == "ready":
+            time.sleep(1.5)
+             
+            client.publish("plant/jetson-to-plc", "ready")
+            utils.startEvent(mqtt, payloadList[0], payloadList[1])
+            
 
 @mqtt.on_disconnect()
 def disconnect(client, packet, exc=None):
