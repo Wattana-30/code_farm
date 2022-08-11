@@ -94,8 +94,8 @@ def contouring(rgb_path):
     return result
 
 
-def capture_img():
-    video_capture = cv2.VideoCapture('http://192.168.1.105:1234/video')
+def capture_img(url: str):
+    video_capture = cv2.VideoCapture(url)
     if not video_capture.isOpened():
         return False
     count = 0
@@ -129,19 +129,25 @@ def publish_to_web(mqtt, img, NDVI, position):
 
 def startEvent(mqtt, farm_id, position):    
     #start
-    img = capture_img()
+    img = capture_img('http://192.168.1.105:1234/video')
+    img_noir = capture_img('http://192.168.1.105:1234/video')
 
     # get path image
     dt = datetime.now()
-    rgb_path = f"{position}_{dt}_rgb".replace(":", "").replace(".", "")
-    ndvi_path = f"{position}_{dt}_ndvi".replace(":", "").replace(".", "")
+    rgb_path = f"{position}_{dt}_rgb".replace(":", "_").split('.')[0]
+    ndvi_path = f"{position}_{dt}_ndvi".replace(":", "_").split('.')[0]
+    noir_path = f"{position}_{dt}_noir".replace(":", "_").split('.')[0]
 
     # get full path
     rgb_path = create_path(rgb_path, 'RGB')
+    noir_path = create_path(noir_path, 'NIR')
     ndvi_path = create_path(ndvi_path, 'NDVI')
+
 
     # save original image
     cv2.imwrite(rgb_path, img)
+    # save noir image
+    cv2.imwrite(noir_path, img_noir)
 
     # find ndvi
     try:
@@ -163,6 +169,7 @@ def startEvent(mqtt, farm_id, position):
     '''
         farm_id
         rgb_path
+        noir_path
         ndvi_path
         leaf_area_index
         plan_loc
@@ -173,7 +180,7 @@ def startEvent(mqtt, farm_id, position):
     item = plant_features_schemas.PlantFeaturesBase(
         plant_loc=position,
         rgb_path=rgb_path,
-        noir_path=str(uuid4()),
+        noir_path=noir_path,
         ndvi_path=ndvi_path,
         leaf_area_index=leaf_area_index
     )

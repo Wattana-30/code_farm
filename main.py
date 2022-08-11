@@ -74,10 +74,8 @@ async def message(client, topic, payload, qos, properties):
         if payloadList[1] == "false": return
 
         if payloadList[2] == "ready":
-            time.sleep(1.5)
-             
-            client.publish("plant/jetson-to-plc", "ready")
             utils.startEvent(mqtt, payloadList[0], payloadList[1])
+            client.publish("plant/jetson-to-plc", "ready")
             
 
 @mqtt.on_disconnect()
