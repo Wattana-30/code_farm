@@ -11,6 +11,7 @@ class PlantFeaturesBase(BaseModel):
     noir_path: str
     ndvi_path: str
     leaf_area_index: float
+    created_at: datetime
 
 
 class PlantFeaturesCreate(PlantFeaturesBase):

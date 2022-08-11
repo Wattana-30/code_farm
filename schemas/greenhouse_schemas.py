@@ -11,6 +11,7 @@ class GreenHouseBase(BaseModel):
     humid: float
     ec: float
     co2: float
+    created_at: datetime
 
 
 class GreenHouseCreate(GreenHouseBase):

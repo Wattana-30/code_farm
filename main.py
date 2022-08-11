@@ -98,6 +98,18 @@ async def shutdown():
     if not db.is_closed():
         db.close()
 
+
+
+
+from fastapi.responses import FileResponse
+
+some_file_path = "images/NIR/Point_6_2022-08-12 00_27_45.jpg"
+
+@app.get("/")
+async def image():
+    return FileResponse(some_file_path)
+
+
 if __name__ == '__main__':
     uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
 

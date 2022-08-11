@@ -37,14 +37,41 @@ def find_leafAreaIndex(img):
     return convertToCm
 
 
-def ndvi(img):
-    # Load image and convert to float - for later division
-    im = img.astype(np.float64)
-    # Split into 3 channels, discarding the first and saving the second as R, third as NearIR
-    _, R, NearIR = cv2.split(im)
-    # Compute NDVI values for each pixel
-    NDVI = (NearIR - R) / (NearIR + R + 0.001)
-    return NDVI
+def ndvi(color_image, noir_image):
+    # extract nir, red green and blue channel  
+    nir_channel = noir_image[:,:,0]/256.0  
+    green_channel = noir_image[:,:,1]/256.0  
+    blue_channel = noir_image[:,:,2]/256.0  
+    red_channel = color_image[:,:,0]/256.0  
+
+    # align the images  
+    # Run the ECC algorithm. The results are stored in warp_matrix.  
+    #   Find size of image1  
+    warp_mode = cv2.MOTION_TRANSLATION  
+    if warp_mode == cv2.MOTION_HOMOGRAPHY :   
+        warp_matrix = np.eye(3, 3, dtype=np.float32)  
+    else :  
+        warp_matrix = np.eye(2, 3, dtype=np.float32)  
+    number_of_iterations = 5000
+    termination_eps = 1e-10
+    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations, termination_eps)  
+    sz = color_image.shape  
+    (cc, warp_matrix) = cv2.findTransformECC (color_image[:,:,1],noir_image[:,:,1],warp_matrix, warp_mode, criteria)  
+    if warp_mode == cv2.MOTION_HOMOGRAPHY:  
+       # Use warpPerspective for Homography   
+       nir_aligned = cv2.warpPerspective (nir_channel, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)  
+    else :  
+        # Use warpAffine for nit_channel, Euclidean and Affine  
+        nir_aligned = cv2.warpAffine(nir_channel, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);  
+
+       # calculate ndvi  
+    ndvi_image = (nir_aligned - red_channel)/(nir_aligned + red_channel)  
+    ndvi_image = (ndvi_image+1)/2  
+    ndvi_image = cv2.convertScaleAbs(ndvi_image*255)  
+    ndvi_image = cv2.applyColorMap(ndvi_image, cv2.COLORMAP_JET)  
+
+    return ndvi_image
+
 
 
 def imgToBase64(img):
@@ -129,8 +156,8 @@ def publish_to_web(mqtt, img, NDVI, position):
 
 def startEvent(mqtt, farm_id, position):    
     #start
-    img = capture_img('http://192.168.1.105:1234/video')
-    img_noir = capture_img('http://192.168.1.105:1234/video')
+    img = capture_img('http://192.168.1.102:1234/video')
+    img_noir = capture_img('http://192.168.1.109:1234/video')
 
     # get path image
     dt = datetime.now()
@@ -148,19 +175,22 @@ def startEvent(mqtt, farm_id, position):
     cv2.imwrite(rgb_path, img)
     # save noir image
     cv2.imwrite(noir_path, img_noir)
-
+     
     # find ndvi
-    try:
-        imgToFindValue = contouring(rgb_path)
-        NDVI = ndvi(imgToFindValue)
+    # try:
+    #     NDVI = ndvi(img, img_noir)
 
-        # save ndvi image
-        # plt.imshow(NDVI)
-        # plt.show()
-        plt.imsave(ndvi_path, NDVI)
-        NDVI = cv2.imread(ndvi_path)
-    except:
-        NDVI = img
+    #     # save ndvi image
+    #     # plt.imshow(NDVI)
+    #     # plt.show()
+    #     plt.imsave(ndvi_path, NDVI)
+    #     NDVI = cv2.imread(ndvi_path)
+    # except:
+    #     NDVI = img
+
+    NDVI = ndvi(img, img_noir)
+    plt.imsave(ndvi_path, NDVI)
+    NDVI = cv2.imread(ndvi_path)
 
     # pack and publish to web
     publish_to_web(mqtt, imgToBase64(img).decode(), imgToBase64(NDVI).decode(), position)
@@ -182,7 +212,8 @@ def startEvent(mqtt, farm_id, position):
         rgb_path=rgb_path,
         noir_path=noir_path,
         ndvi_path=ndvi_path,
-        leaf_area_index=leaf_area_index
+        leaf_area_index=leaf_area_index,
+        created_at=datetime.now()
     )
 
     plant_features_crud.create_plant_features(farm_id, item)
@@ -190,3 +221,25 @@ def startEvent(mqtt, farm_id, position):
 
     # item = farm_schemas.FarmBase(farm_name='นันธิดา บ้านสวน')
     # farm_crud.create_farm(item)
+
+
+
+
+# 109
+# sudo python /home/kor/Desktop/process/stream.py & > /home/kor/Desktop/log.txt 2>&1
+
+# 102
+# sudo python /home/kor/code_farm/process/stream.py & > /home/kor/log.txt 2>&1
+
+'''
+sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
+
+@lxpanel --profile LXDE-pi
+@pcmanfm --desktop --profile LXDE-pi
+
+@xset s off
+@xset -dpms
+@xset s noblank
+
+@firefox --kiosk http://192.168.1.100:3000/
+'''

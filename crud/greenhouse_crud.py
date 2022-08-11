@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import HTTPException
 
 # databases
@@ -42,7 +43,7 @@ def pack_and_insert_greenhouse(msg: str):
     temp = msgList[4]
 
     item = schemas.GreenHouseCreate(
-        temp=temp, humid=rh, ec=ec, co2=co2
+        temp=temp, humid=rh, ec=ec, co2=co2, created_at=datetime.now()
     )
 
     create_greenhouse(farm_id, item)
