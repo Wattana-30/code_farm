@@ -1,4 +1,8 @@
+from flask import Flask, Response
 import cv2
+
+app = Flask(__name__)
+
 
 def gstreamer_pipeline(
     capture_width=3280,
@@ -27,22 +31,26 @@ def gstreamer_pipeline(
         )
     )
 
-def getImg():
-    video_capture = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
-    if not video_capture.isOpened():
-        return False
-    count = 0
+
+camera = cv2.VideoCapture(0)
+# camera = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+
+def gen_frames():  
     while True:
-        count += 1
-        _, frame = video_capture.read()
-        img = frame
-        if count > 10:
+        success, frame = camera.read()
+        if not success:
             break
+        else:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-    cv2.imshow("result", img)
-    cv2.waitKey(10)
-    cv2.destroyAllWindows()
-    video_capture.release()
-    return img
 
-getImg()
+@app.route('/video')
+def video_feed():
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=1234)
