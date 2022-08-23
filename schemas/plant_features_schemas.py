@@ -6,6 +6,7 @@ from schemas.schemas import PeeweeGetterDict
 
 
 class PlantFeaturesBase(BaseModel):
+    green_id: int
     plant_loc: str
     rgb_path: str
     noir_path: str

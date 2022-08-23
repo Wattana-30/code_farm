@@ -12,7 +12,7 @@ def create_greenhouse(farm_id: int, item: schemas.GreenHouseCreate):
     db_greenhouse = models.GreenhouseEnv(**item.dict(), farm_id=farm_id)
     try: db_greenhouse.save()
     except: raise HTTPException(status_code=400, detail=f"ไม่มี farm_id: {farm_id}")
-    return db_greenhouse
+    return models.GreenhouseEnv.select().order_by(models.GreenhouseEnv.id.desc()).get()
 
 
 def read_greenhouses(skip: int = 0, limit: int = 100):
@@ -46,5 +46,5 @@ def pack_and_insert_greenhouse(msg: str):
         temp=temp, humid=rh, ec=ec, co2=co2, created_at=datetime.now()
     )
 
-    create_greenhouse(farm_id, item)
+    return create_greenhouse(farm_id, item)
     

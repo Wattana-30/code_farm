@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi_mqtt import FastMQTT, MQTTConfig
 from fastapi import FastAPI
 import uvicorn
@@ -55,8 +56,7 @@ mqtt.init_app(app)
 def connect(client, flags, rc, properties):
     print("Connected: ", client, flags, rc, properties)
     mqtt.client.subscribe("plant/farm")
-    mqtt.client.subscribe("plant/jetson-to-server")
-    mqtt.client.subscribe("plant/plc-to-jetson")
+    mqtt.client.subscribe("plant/plc-to-server")
 
 
 @mqtt.on_message()
@@ -64,18 +64,28 @@ async def message(client, topic, payload, qos, properties):
     # print("Received message: ", topic, payload.decode(), qos, properties)
     # print("Received message: ", payload.decode())
     print("Topic: ", topic)
+    print(f"message: {payload.decode()}")
 
     if topic == 'plant/farm':
-        greenEnv.pack_and_insert_greenhouse(payload.decode())
-    elif topic == 'plant/plc-to-jetson':
+        id = greenEnv.pack_and_insert_greenhouse(payload.decode())
+        client.publish("plant/green-env-id", str(id))
+    elif topic == 'plant/plc-to-server':
         payload = payload.decode()
         payloadList = payload.split(" ")
+
+        # farm_id, position, ready, green_env_id
 
         if payloadList[1] == "false": return
 
         if payloadList[2] == "ready":
-            utils.startEvent(mqtt, payloadList[0], payloadList[1])
-            client.publish("plant/jetson-to-plc", "ready")
+            dt = datetime.now()
+            time.sleep(1)
+            try: utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
+            except: 
+                time.sleep(1)
+                try: utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
+                except: pass
+            client.publish("plant/server-to-plc", "ready")
             
 
 @mqtt.on_disconnect()

@@ -68,6 +68,7 @@ class Constant(peewee.Model):
 
 class PlantFeatures(peewee.Model):
     # qrcode = peewee.ForeignKeyField(PlantQrcode)
+    green_id = peewee.ForeignKeyField(GreenhouseEnv)
     farm = peewee.ForeignKeyField(Farm)
     plant_loc = peewee.CharField(max_length=255)
     rgb_path = peewee.CharField(max_length=255, unique=True)

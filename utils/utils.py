@@ -68,9 +68,22 @@ def ndvi(color_image, noir_image):
     ndvi_image = (nir_aligned - red_channel)/(nir_aligned + red_channel)  
     ndvi_image = (ndvi_image+1)/2  
     ndvi_image = cv2.convertScaleAbs(ndvi_image*255)  
-    ndvi_image = cv2.applyColorMap(ndvi_image, cv2.COLORMAP_JET)  
+    ndvi_image = cv2.applyColorMap(ndvi_image, cv2.COLORMAP_JET)
+    '''
+        # calculate gndvi_image  
+    gndvi_image = (nir_channel - green_channel)/(nir_channel + green_channel)  
+    gndvi_image = (gndvi_image+1)/2  
+    gndvi_image = cv2.convertScaleAbs(gndvi_image*255)  
+    gndvi_image = cv2.applyColorMap(gndvi_image, cv2.COLORMAP_JET)  
 
-    return ndvi_image
+
+    # calculate bndvi_image  
+    bndvi_image = (nir_channel - blue_channel)/(nir_channel + blue_channel)  
+    bndvi_image = (bndvi_image+1)/2  
+    bndvi_image = cv2.convertScaleAbs(bndvi_image*255)  
+    bndvi_image = cv2.applyColorMap(bndvi_image, cv2.COLORMAP_JET)  
+    '''
+    return ndvi_image  
 
 
 
@@ -123,8 +136,8 @@ def contouring(rgb_path):
 
 def capture_img(url: str):
     video_capture = cv2.VideoCapture(url)
-    if not video_capture.isOpened():
-        return False
+    # if not video_capture.isOpened():
+    #     return False
     count = 0
     while True:
         count += 1
@@ -154,13 +167,12 @@ def publish_to_web(mqtt, img, NDVI, position):
 
 
 
-def startEvent(mqtt, farm_id, position):    
+def startEvent(mqtt, farm_id, position, green_id, dt):    
     #start
-    img = capture_img('http://192.168.1.102:1234/video')
-    img_noir = capture_img('http://192.168.1.109:1234/video')
+    img = capture_img('http://192.168.1.109:1234/video')
+    img_noir = capture_img('http://192.168.1.102:1234/video')
 
     # get path image
-    dt = datetime.now()
     rgb_path = f"{position}_{dt}_rgb".replace(":", "_").split('.')[0]
     ndvi_path = f"{position}_{dt}_ndvi".replace(":", "_").split('.')[0]
     noir_path = f"{position}_{dt}_noir".replace(":", "_").split('.')[0]
@@ -169,7 +181,6 @@ def startEvent(mqtt, farm_id, position):
     rgb_path = create_path(rgb_path, 'RGB')
     noir_path = create_path(noir_path, 'NIR')
     ndvi_path = create_path(ndvi_path, 'NDVI')
-
 
     # save original image
     cv2.imwrite(rgb_path, img)
@@ -208,6 +219,7 @@ def startEvent(mqtt, farm_id, position):
     leaf_area_index = find_leafAreaIndex(img)
 
     item = plant_features_schemas.PlantFeaturesBase(
+        green_id=green_id,
         plant_loc=position,
         rgb_path=rgb_path,
         noir_path=noir_path,
