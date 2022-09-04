@@ -72,8 +72,12 @@ class PlantFeatures(peewee.Model):
     farm = peewee.ForeignKeyField(Farm)
     plant_loc = peewee.CharField(max_length=255)
     rgb_path = peewee.CharField(max_length=255, unique=True)
+    mean_rgb = peewee.DoubleField()
+    std_rgb = peewee.DoubleField()
     noir_path = peewee.CharField(max_length=255, unique=True)
     ndvi_path = peewee.CharField(max_length=255, unique=True)
+    mean_ndvi = peewee.DoubleField()
+    std_ndvi = peewee.DoubleField()
     leaf_area_index = peewee.DoubleField()
     created_at = peewee.DateTimeField(default=datetime.now())
 

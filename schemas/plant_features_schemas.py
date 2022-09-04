@@ -9,8 +9,12 @@ class PlantFeaturesBase(BaseModel):
     green_id: int
     plant_loc: str
     rgb_path: str
+    mean_rgb: float
+    std_rgb: float
     noir_path: str
     ndvi_path: str
+    mean_ndvi: float
+    std_ndvi: float
     leaf_area_index: float
     created_at: datetime
 
