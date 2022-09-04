@@ -30,12 +30,10 @@ def save_image(filename: str, base64_str: str):
     img = Image.open(io.BytesIO(image))
     img.save(filename, 'jpeg')
 
-
-
 def findLeafArea(image):
     blank_mask = np.zeros(image.shape, dtype=np.uint8)
     original = image.copy()
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     # set lower and upper color limits
     lower_val = (0, 18, 0)
     upper_val = (60, 255, 120)
@@ -52,12 +50,67 @@ def findLeafArea(image):
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
     cv2.fillPoly(blank_mask, [cnts], (255, 255, 255))
     blank_mask = cv2.cvtColor(blank_mask, cv2.COLOR_BGR2GRAY)
+    # cv2.imshow("show :",blank_mask)
+    # cv2.waitKey(1000)
     number_of_white_pix = np.sum(blank_mask == 255)
     convertToCm = 0.0264583333 * number_of_white_pix
     print('result :', convertToCm,'cm^2 ')
     return convertToCm
 
 
+def contour(img):
+    # convert to hsv
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # mask of green (36,0,0) ~ (70, 255,255)
+    mask1 = cv2.inRange(hsv, (0, 0, 101), (30, 255, 255))
+
+    # mask o yellow (15,0,0) ~ (36, 255, 255)
+    mask2 = cv2.inRange(hsv, (0, 2, 16), (20, 255, 255))
+    mask = cv2.bitwise_or(mask1, mask2)
+    target = cv2.bitwise_and(img, img, mask=mask)
+    return target
+
+
+def contouring(image):
+    # Read image, create blank masks, color threshold
+
+    blank_mask = np.zeros(image.shape, dtype=np.uint8)
+    original = image.copy()
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    mask1 = cv2.inRange(hsv, (0, 0, 101), (30, 255, 255))
+    # mask o yellow (15,0,0) ~ (36, 255, 255)
+    mask2 = cv2.inRange(hsv, (0, 2, 16), (20, 255, 255))
+
+    # final mask and masked
+    mask = cv2.bitwise_or(mask1, mask2)
+
+    # Perform morphological operations
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
+    close = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+    # Find contours and filter for largest contour
+    # Draw largest contour onto a blank mask then bitwise-and
+    cnts = cv2.findContours(close, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[0]
+    cv2.fillPoly(blank_mask, [cnts], (255, 255, 255))
+    blank_mask = cv2.cvtColor(blank_mask, cv2.COLOR_BGR2GRAY)
+
+    result = cv2.bitwise_and(original, original, mask=blank_mask)
+
+    # Crop ROI from result
+    x, y, w, h = cv2.boundingRect(blank_mask)
+    ROI = result[y:y+h, x:x+w]
+    cv2.bitwise_not(blank_mask)
+    # image in this case is your image you want to eliminate black
+    result[np.where((result == [0, 0, 0]).all(axis=2))] = [255, 255, 255]
+    cv2.imshow("",image)
+    cv2.imshow("show contour",result)
+    cv2.waitKey(0)
+    return result
 
 def ndvi(color_image, noir_image):
     # extract nir, red green and blue channel  
@@ -84,7 +137,7 @@ def ndvi(color_image, noir_image):
        nir_aligned = cv2.warpPerspective (nir_channel, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)  
     else :  
         # Use warpAffine for nit_channel, Euclidean and Affine  
-        nir_aligned = cv2.warpAffine(nir_channel, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);  
+       nir_aligned = cv2.warpAffine(nir_channel, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);  
 
        # calculate ndvi  
     ndvi_image = (nir_aligned - red_channel)/(nir_aligned + red_channel)  
@@ -120,8 +173,6 @@ def capture_img(url: str):
         if count > 10:
             break
 
-    cv2.waitKey(10)
-    cv2.destroyAllWindows()
     video_capture.release()
     return frame
 
@@ -143,6 +194,9 @@ def publish_to_web(mqtt, img, NDVI, position):
     
 
 def findNdviValue(NDVI):
+        NDVI = contouring(NDVI)
+        NDVI = contour(NDVI)
+        NDVI = contouring(NDVI)
         #split just red dimention of ndvi
         ndviRed = NDVI[:,:,2]
         #convert ndvi chanel red to scale value between 0-1
@@ -152,7 +206,7 @@ def findNdviValue(NDVI):
         return sc_ndvi.mean(),sc_ndvi.std()
 
 
-def findRGB(rgb):
+def findRGBValue(rgb):
         gray = cv2.cvtColor(rgb,cv2.COLOR_BGR2GRAY)
         sc_gray = (gray-gray.min())/(gray.max()-gray.min())
         return sc_gray.mean(),sc_gray.std()
@@ -186,24 +240,22 @@ def startEvent(mqtt, farm_id, position, green_id, dt):
     NDVI = cv2.imread(ndvi_path)
     
     mean_ndvi,std_ndvi = findNdviValue(NDVI)
-    mean_rgb,std_rgb = findRGB(img)
+    mean_rgb,std_rgb = findRGBValue(img)
     print(mean_ndvi)
-    print(std_ndvi)
-
+    leaf_area_index = findLeafArea(img)
 
 
     # pack and publish to web
     publish_to_web(mqtt, imgToBase64(img).decode(), imgToBase64(NDVI).decode(), position)
     #publish_to_web(mqtt, data['image'], data['image'], data['position'])
-    leaf_area_index = findLeafArea(img)
-    print(leaf_area_index)
+  
 
     item = plant_features_schemas.PlantFeaturesBase(
         green_id=green_id,
         plant_loc=position,
         rgb_path=rgb_path,
-        mean_rgb=mean_rgb,
         std_rgb=std_rgb,
+        mean_rgb=mean_rgb,
         noir_path=noir_path,
         mean_ndvi=mean_ndvi,
         std_ndvi=std_ndvi,

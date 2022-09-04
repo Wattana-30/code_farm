@@ -102,11 +102,8 @@ async def message(client, topic, payload, qos, properties):
         if payloadList[2] == "ready":
             dt = datetime.now()
             time.sleep(1)
-            try: utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
-            except: 
-                time.sleep(1)
-                try: utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
-                except: pass
+            utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
+            
             client.publish("plant/server-to-plc", "ready")
             
 
@@ -129,7 +126,6 @@ async def startup():
 async def shutdown():
     if not db.is_closed():
         db.close()
-
 
 
 
@@ -205,5 +201,5 @@ if __name__ == '__main__':
     # http_tunnel = ngrok.connect(8000,"http")
     # print(http_tunnel)
 
-    uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=False)
+    uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
 
