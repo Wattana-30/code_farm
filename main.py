@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 
 
 # routers
-from routers import users, items, plant_features, plant_qrcode, farm, greenhouse, constant
+from routers import plant_features, plant_qrcode, farm, greenhouse, constant
 
 # databases
 from databases import models
@@ -202,4 +202,5 @@ if __name__ == '__main__':
     # print(http_tunnel)
 
     uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
+
 

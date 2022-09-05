@@ -11,7 +11,7 @@ import json
 from uuid import uuid4
 import statistics as st
 from ast import Num
-
+import time
 # crud
 from crud import plant_features_crud
 from crud import farm_crud
@@ -107,9 +107,6 @@ def contouring(image):
     cv2.bitwise_not(blank_mask)
     # image in this case is your image you want to eliminate black
     result[np.where((result == [0, 0, 0]).all(axis=2))] = [255, 255, 255]
-    cv2.imshow("",image)
-    cv2.imshow("show contour",result)
-    cv2.waitKey(0)
     return result
 
 def ndvi(color_image, noir_image):
@@ -163,6 +160,7 @@ def stringToImage(base64_string):
 
 
 def capture_img(url: str):
+  
     video_capture = cv2.VideoCapture(url)
     # if not video_capture.isOpened():
     #     return False
@@ -194,9 +192,11 @@ def publish_to_web(mqtt, img, NDVI, position):
     
 
 def findNdviValue(NDVI):
+        '''
         NDVI = contouring(NDVI)
         NDVI = contour(NDVI)
         NDVI = contouring(NDVI)
+        '''
         #split just red dimention of ndvi
         ndviRed = NDVI[:,:,2]
         #convert ndvi chanel red to scale value between 0-1
@@ -216,6 +216,7 @@ def findRGBValue(rgb):
     
 def startEvent(mqtt, farm_id, position, green_id, dt):    
     #start
+    time.sleep(1.4)
     img = capture_img('http://192.168.1.109:1234/video')
     img_noir = capture_img('http://192.168.1.119:1234/video')
 
