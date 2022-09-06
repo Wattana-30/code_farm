@@ -102,8 +102,10 @@ async def message(client, topic, payload, qos, properties):
         if payloadList[2] == "ready":
             dt = datetime.now()
             time.sleep(1)
-            utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
-            
+            try:
+                utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
+            except:
+                print("found error")
             client.publish("plant/server-to-plc", "ready")
             
 

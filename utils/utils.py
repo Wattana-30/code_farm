@@ -1,4 +1,5 @@
 from cgitb import grey
+from unittest import expectedFailure
 import cv2
 import numpy as np
 import base64
@@ -31,6 +32,7 @@ def save_image(filename: str, base64_str: str):
     img.save(filename, 'jpeg')
 
 def findLeafArea(image):
+    #image = cv2.imread(image)
     blank_mask = np.zeros(image.shape, dtype=np.uint8)
     original = image.copy()
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -192,11 +194,7 @@ def publish_to_web(mqtt, img, NDVI, position):
     
 
 def findNdviValue(NDVI):
-        '''
-        NDVI = contouring(NDVI)
-        NDVI = contour(NDVI)
-        NDVI = contouring(NDVI)
-        '''
+        #NDVI = cv2.imread(NDVI)
         #split just red dimention of ndvi
         ndviRed = NDVI[:,:,2]
         #convert ndvi chanel red to scale value between 0-1
@@ -207,6 +205,7 @@ def findNdviValue(NDVI):
 
 
 def findRGBValue(rgb):
+        #rgb = cv2.imread(rgb)
         gray = cv2.cvtColor(rgb,cv2.COLOR_BGR2GRAY)
         sc_gray = (gray-gray.min())/(gray.max()-gray.min())
         return sc_gray.mean(),sc_gray.std()
@@ -229,12 +228,19 @@ def startEvent(mqtt, farm_id, position, green_id, dt):
     rgb_path = create_path(rgb_path, 'RGB')
     noir_path = create_path(noir_path, 'NIR')
     ndvi_path = create_path(ndvi_path, 'NDVI')
+    if(True):
+        try:
+            # save original image
+            cv2.imwrite(rgb_path, img)
+        except: 
+            print("have no image -0")
 
-    # save original image
-    cv2.imwrite(rgb_path, img)
-    # save noir image
-    cv2.imwrite(noir_path, img_noir)
-     
+    if(True):
+        try:
+            # save noir image
+            cv2.imwrite(noir_path, img_noir)
+        except:
+            print("have no image -1") 
 
     NDVI = ndvi(img, img_noir)
     plt.imsave(ndvi_path, NDVI)

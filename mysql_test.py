@@ -52,7 +52,6 @@ def insert_plant_features():
         INSERT INTO plant_features (green_id,	farm_id,	plant_loc,	rgb_path,	noir_path,	ndvi_path,	leaf_area_index,	created_at)
         VALUES ({id}, 1, '{pl}', '{path}', '{path}', '{path}', {leaf_area_index}, '{str(datetime.now())}')
       '''
-
       mycursor.execute(sql)
       mydb.commit()
       print(mycursor.rowcount, "record inserted.")
