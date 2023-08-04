@@ -94,24 +94,27 @@ async def message(client, topic, payload, qos, properties):
     elif topic == 'plant/plc-to-server':
         payload = payload.decode()
         payloadList = payload.split(" ")
-
+        print("run")
         # farm_id, position, ready, green_env_id
 
         if payloadList[1] == "false": return
 
         if payloadList[2] == "ready":
             dt = datetime.now()
-            time.sleep(1)
+            time.sleep(1.5)
+    
             try:
                 utils.startEvent(mqtt, payloadList[0], payloadList[1], payloadList[3], dt)
             except:
-                print("found error")
+                print("found error in util file")
             client.publish("plant/server-to-plc", "ready")
-            
+      
+
 
 @mqtt.on_disconnect()
 def disconnect(client, packet, exc=None):
     print("Disconnected")
+
 
 
 @mqtt.on_subscribe()

@@ -17,9 +17,11 @@ import time
 from crud import plant_features_crud
 from crud import farm_crud
 
+
 # schemas
 from schemas import plant_features_schemas
 from schemas import farm_schemas
+
 
 
 def create_path(image_name: str, folder: str):
@@ -111,42 +113,6 @@ def contouring(image):
     result[np.where((result == [0, 0, 0]).all(axis=2))] = [255, 255, 255]
     return result
 
-def ndvi(color_image, noir_image):
-    # extract nir, red green and blue channel  
-    nir_channel = noir_image[:,:,0]/256.0  
-    green_channel = noir_image[:,:,1]/256.0  
-    blue_channel = noir_image[:,:,2]/256.0  
-    red_channel = color_image[:,:,0]/256.0  
-
-    # align the images  
-    # Run the ECC algorithm. The results are stored in warp_matrix.  
-    #   Find size of image1  
-    warp_mode = cv2.MOTION_TRANSLATION  
-    if warp_mode == cv2.MOTION_HOMOGRAPHY :   
-        warp_matrix = np.eye(3, 3, dtype=np.float32)  
-    else :  
-        warp_matrix = np.eye(2, 3, dtype=np.float32)  
-    number_of_iterations = 5000
-    termination_eps = 1e-10
-    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations, termination_eps)  
-    sz = color_image.shape  
-    (cc, warp_matrix) = cv2.findTransformECC (color_image[:,:,1],noir_image[:,:,1],warp_matrix, warp_mode, criteria)  
-    if warp_mode == cv2.MOTION_HOMOGRAPHY:  
-       # Use warpPerspective for Homography   
-       nir_aligned = cv2.warpPerspective (nir_channel, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)  
-    else :  
-        # Use warpAffine for nit_channel, Euclidean and Affine  
-       nir_aligned = cv2.warpAffine(nir_channel, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);  
-
-       # calculate ndvi  
-    ndvi_image = (nir_aligned - red_channel)/(nir_aligned + red_channel)  
-    ndvi_image = (ndvi_image+1)/2  
-    ndvi_image = cv2.convertScaleAbs(ndvi_image*255)  
-    ndvi_image = cv2.applyColorMap(ndvi_image, cv2.COLORMAP_JET)
-  
-    return ndvi_image  
-
-
 
 def imgToBase64(img):
     retval, buffer = cv2.imencode('.jpg', img)
@@ -162,7 +128,6 @@ def stringToImage(base64_string):
 
 
 def capture_img(url: str):
-  
     video_capture = cv2.VideoCapture(url)
     # if not video_capture.isOpened():
     #     return False
@@ -170,7 +135,7 @@ def capture_img(url: str):
     while True:
         count += 1
         _, frame = video_capture.read()
-        if count > 10:
+        if count > 20:
             break
 
     video_capture.release()
@@ -194,62 +159,56 @@ def publish_to_web(mqtt, img, NDVI, position):
     
 
 def findNdviValue(NDVI):
-        #NDVI = cv2.imread(NDVI)
-        #split just red dimention of ndvi
-        ndviRed = NDVI[:,:,2]
-        #convert ndvi chanel red to scale value between 0-1
-        sc_ndvi = (ndviRed-ndviRed.min())/(ndviRed.max()-ndviRed.min())
-        #find mean Value of ndvi
-        #find standaard deviation of ndvi
-        return sc_ndvi.mean(),sc_ndvi.std()
+    b, g, r = cv2.split(NDVI)
+    bottom = (r.astype(float) + b.astype(float))
+    bottom[bottom==0] = 0.01
+    ndvi = (r.astype(float) - b) / bottom # THIS IS THE CHANGED LINE
+    
+    print('min :'+str(ndvi.min()))
+    print('max :'+str(ndvi.max()))
+    print('mean :'+str(ndvi.mean()))
+
+    # color_mapped_prep = ndvi.astype(np.uint8)
+    # color_mapped_image = cv2.applyColorMap(color_mapped_prep, fastiecm)
 
 
-def findRGBValue(rgb):
-        #rgb = cv2.imread(rgb)
-        gray = cv2.cvtColor(rgb,cv2.COLOR_BGR2GRAY)
-        sc_gray = (gray-gray.min())/(gray.max()-gray.min())
-        return sc_gray.mean(),sc_gray.std()
-
-
-
+    return ndvi.mean(),ndvi.std()
     
 def startEvent(mqtt, farm_id, position, green_id, dt):    
     #start
-    time.sleep(1.4)
-    img = capture_img('http://192.168.1.109:1234/video')
-    img_noir = capture_img('http://192.168.1.119:1234/video')
+
+    # img = capture_img('http://192.168.1.109:1234/video')
+    img_noir = capture_img('http://192.168.1.103:1234/video')
 
     # get path image
-    rgb_path = f"{position}_{dt}_rgb".replace(":", "_").split('.')[0]
+    # rgb_path = f"{position}_{dt}_rgb".replace(":", "_").split('.')[0]
     ndvi_path = f"{position}_{dt}_ndvi".replace(":", "_").split('.')[0]
     noir_path = f"{position}_{dt}_noir".replace(":", "_").split('.')[0]
 
     # get full path
-    rgb_path = create_path(rgb_path, 'RGB')
+    # rgb_path = create_path(rgb_path, 'RGB')
     noir_path = create_path(noir_path, 'NIR')
     ndvi_path = create_path(ndvi_path, 'NDVI')
-    if(True):
-        try:
-            # save original image
-            cv2.imwrite(rgb_path, img)
-        except: 
-            print("have no image -0")
+    # if(True):
+    #     try:
+    #         # save original image
+    #         cv2.imwrite(rgb_path, img)
+    #     except: 
+    #         print("have no image -0")
 
     if(True):
         try:
             # save noir image
             cv2.imwrite(noir_path, img_noir)
         except:
-            print("have no image -1") 
+            print("have no image noir camera") 
 
-    NDVI = ndvi(img, img_noir)
+    mean_ndvi,std_ndvi, = findNdviValue(noir_path)
+
     plt.imsave(ndvi_path, NDVI)
-    NDVI = cv2.imread(ndvi_path)
-    
-    mean_ndvi,std_ndvi = findNdviValue(NDVI)
-    mean_rgb,std_rgb = findRGBValue(img)
+    # mean_rgb,std_rgb = findRGBValue(img)
     print(mean_ndvi)
-    leaf_area_index = findLeafArea(img)
+    leaf_area_index = findLeafArea(img_noir) #change from img rgb
 
 
     # pack and publish to web
@@ -260,9 +219,9 @@ def startEvent(mqtt, farm_id, position, green_id, dt):
     item = plant_features_schemas.PlantFeaturesBase(
         green_id=green_id,
         plant_loc=position,
-        rgb_path=rgb_path,
-        std_rgb=std_rgb,
-        mean_rgb=mean_rgb,
+        rgb_path=1,
+        std_rgb=1,
+        mean_rgb=1,
         noir_path=noir_path,
         mean_ndvi=mean_ndvi,
         std_ndvi=std_ndvi,
